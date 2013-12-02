@@ -80,15 +80,164 @@ main = do
 * doと書いてから、一行一行実行ステップ（IOアクション）を書き並べる
 * doはブロックの最後の値（IOアクション）を返す。この例だと `IO ()`
 
-## 束縛文 `name <- getLine`
+## IOアクションの結果の束縛 `name <- getLine`
+
+* 「IOアクションgetLineを実行して、それからその結果の値をnameに束縛せよ」という意味
+  * nameの型はStringになる
+
+## I/O アクション
+
+* I/Oアクションは小さな足がついた箱
+* 実世界に出て行って、そこで何かを行い、なにか値を持って帰ってくる
+* 箱の中身のデータを手に入れる唯一の方法が `<-`
+* getLineは不純なので２回実行すると同じ結果を返す保証はない
+* nameはただのStringで純粋
+
+不純なコードと純粋なコードを分けて書いたプログラム:
+
+```haskell
+main = do
+    putStrLn "Hello, what's your name?"
+    name <- getLine
+    putStrLn $ "Zis is your future: " ++ tellFortune name
+
+-- tellFortuneは純粋なコード
+tellFortune :: String -> String
+tellFortune "Goro" = "good"
+tellFortune name = "so so"
+```
+
+* では、以下のコードは有効か？
+
+```haskell
+nameTag = "Hello, my name is " ++ getLine
+```
+
+* No! String と IO String の連結はできない
+* 不純なコードは純粋なコードに混ぜ合わせることはできない
+
+* IO () もバインドすることができる: `foo <- putStrLn "..."`
+  * このとき foo は `()` になる
+
+以下のコードはなにが起きるか？
+
+```haskell
+myLine = getLine
+```
+
+* これは、`getLine` に別名をつけるだけ
+  * `myLine :: IO String`
+* IOアクションが **実行** されるのは、mainという名前をあたえられたときと他のdoブロックの中のみ（+ghci)
+
+### IOアクションのなかでletを使う
+
+* 純粋な値を名前に束縛するにはletを使う
+
+```
+import Data.Char
+
+main = do
+    putStrLn "What's your first name?"
+    firstName <- getLine
+    putStrLn "What's your last name?"
+    lastName <- getLine
+    let bigFirstName = map toUpper firstName
+        bigLastName  = map toUpper lastName
+    putStrLn $ "hey " ++ bigFirstName ++ " " ++ bigLastName ++ ", how are you?"
+
+```
+
+### 逆順に表示する
+
+* IOアクションに慣れるために、単語を逆順にして表示するプログラムを書いてみよう
+
+```haskell
+main = do
+    line <- getLine
+    if null line
+        then return ()
+        else do
+            putStrLn $ reverseWords line
+            main
+
+reverseWords :: String -> String
+reverseWords = unwords . map reverse . words
+-- reverseWords s = unwords  (map reverse  (words s))
+```
+
+* `getLine` は改行を除いた値を返す
+* `null []` が `True` なので `null ""` も `True`
+* `else` は IOアクションただひとつを受け取るので、doブロックをつかって2つのIOアクションを1つにまとめている
+
+else文は以下でもいい
+
+```haskell
+else (do
+	putStrLn $ reverseWords line
+	main)
+```
+
+* `return ()` は他の言語のreturn文ではない
+* `return ()` は純粋な値をIOアクションでくるむ
+  * 実際にはMonadでくるむのでIOアクション以外でもつかえるっぽい
+  * e.g. `let a = return "foo" :: IO String` とすると `a :: IO String` が得られる
+* 上記reverseプログラムで `then return ()` とすしているのは、mainがIOアクションを要求する (`main :: IO ()`) から
 
 ## 8.4 いくつかの便利なIO関数
 
+（ここでは以下の `Monad a` を `IO a` と読み替えてよい）
+
+* `putStr :: String -> IO ()`
+* `putChar :: Char -> IO ()`
+* `print :: Show a => a -> IO ()`
+  * Rubyの `p()` みたいなもの
+* `when :: Monad m => Bool -> m () -> m ()` defined in Control.Monad
+  * boolとIOアクションをうけとり、boolがTrueの時に渡されたIOアクションを返す
+  * if-then-elseのelseが不要なときに使う
+* `sequence :: Monad m => [m a] -> m [a]`
+  * `[IO a]` を `IO [a]` に変換する 
+  * 使い方みるのがはやい
+
+```haskell
+main = do
+    a <- getLine
+    b <- getLine
+    c <- getLine
+    print [a, b, c]
+
+main' = do
+    s <- sequence [getLine, getLine, getLine]
+    print s
+```
+
+* `mmpM :: Monad m => (a -> m b) -> [a] -> m [b]`
+  * リストにIOアクションを適用してひとつのIOアクションにまとめる
+  * `mapM  print [1, 2, 3] :: IO[()]`
+  * `mapM_ print [1, 2, 3] :: IO ()`
+* `forever :: Monad m => m a -> m b` defined in Control.Monad
+* `forM :: Monad m => [a] -> (a -> m b) -> m [b]` defined in Control.Monad
+  * mapMとほぼ同じだが、引数の順番が異なる
+    * mapMとは、どの引数が長くなるかによって使い分ける
+  * `forM  [1, 2, 3] print :: IO[()]`
+  * `forM_ [1, 2, 3] print :: IO ()`
+
+```haskell
+import Control.Monad
+
+main = do
+    colors <- forM [1, 2, 3, 4] $ \a -> do
+        putStrLn $ "Which color do you associate with the number "
+            ++ show a ++ "?"
+        color <- getLine
+        return color
+    putStrLn "The color that you associate with 1, 2, 3, and 4 are: "
+    mapM_ putStrLn colors
+```
+
 ## 8.5 IOアクションおさらい
 
-* IOアクションは値
+* IOアクション「実世界とやりとりする何か」をくるんだ値
   * 関数の引数として渡したり、戻り値として返したりできる
 * main関数の中に入っていると実行される
-* 実世界とのインタラクションを行う
-
+* 実世界との情報のやりとりを行う
 
