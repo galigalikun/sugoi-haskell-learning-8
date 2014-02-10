@@ -56,17 +56,19 @@ putStrLn "hello, world" :: IO ()
 複数のIOアクションを一つにまとめるための構文
 
 ```haskell
+-- do-actions.hs
 main = do
     putStrLn "Hello, what's your name?"
     name <- getLine
     putStrLn $ "Hey " ++ name ++ ", you rock!"
 ```
 
-※ 本文にはmainの型は明示しないとあるが、訳注には明示するのが一般的らしい
+※ 本文にはmainの型は明示しないとあるが、訳注によると明示するのが一般的らしい
 
 一行一行バラして型を補った版
 
 ```haskell
+-- do-actions2.hs
 makeQuestion :: IO ()
 makeQuestion = putStrLn "Hello, what's your name?"
 
@@ -104,6 +106,7 @@ main = do
 不純なコードと純粋なコードを分けて書いたプログラム:
 
 ```haskell
+-- fortune.hs
 main = do
     putStrLn "Hello, what's your name?"
     name <- getLine
@@ -142,6 +145,7 @@ myLine = getLine
 * 純粋な値を名前に束縛するにはletを使う
 
 ```
+-- let.hs
 import Data.Char
 
 main = do
@@ -160,6 +164,7 @@ main = do
 * IOアクションに慣れるために、単語を逆順にして表示するプログラムを書いてみよう
 
 ```haskell
+-- reverse.hs
 main = do
     line <- getLine
     if null line
@@ -230,6 +235,7 @@ main' = do
   * `forM_ [1, 2, 3] print :: IO ()`
 
 ```haskell
+-- forM.hs
 import Control.Monad
 
 main = do
