@@ -1,4 +1,11 @@
+# すごいHaskell楽しく学ぼう！輪読会
+
+http://sugoihaskell.github.io/
+
+2014/2/10 by gfx
+
 ## 第8章 入出力
+
 
 ## 8.1 不順なものと純粋なものを分離する
 
@@ -195,7 +202,7 @@ else (do
   * boolとIOアクションをうけとり、boolがTrueの時に渡されたIOアクションを返す
   * if-then-elseのelseが不要なときに使う
 * `sequence :: Monad m => [m a] -> m [a]`
-  * `[IO a]` を `IO [a]` に変換する 
+  * `[IO a]` を `IO [a]` に変換する
   * 使い方みるのがはやい
 
 ```haskell
