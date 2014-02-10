@@ -6,4 +6,3 @@ main = do
     let c = putStrLn "C"
     c
     b
-    -- -> A C B
